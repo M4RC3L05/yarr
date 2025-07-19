@@ -133,16 +133,6 @@ func (feed *Feed) cleanup() {
 		feed.Items[i].URL = strings.TrimSpace(item.URL)
 		feed.Items[i].Title = strings.TrimSpace(htmlutil.ExtractText(item.Title))
 		feed.Items[i].Content = strings.TrimSpace(item.Content)
-
-		if len(feed.Items[i].MediaLinks) > 0 {
-			mediaLinks := make([]MediaLink, 0)
-			for _, link := range item.MediaLinks {
-				if !strings.Contains(item.Content, link.URL) {
-					mediaLinks = append(mediaLinks, link)
-				}
-			}
-			feed.Items[i].MediaLinks = mediaLinks
-		}
 	}
 }
 

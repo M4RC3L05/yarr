@@ -215,6 +215,7 @@ var vm = new Vue({
   data: function() {
     var s = app.settings
     return {
+      'htmlEntitiesDecoder': document.createElement("textarea"),
       'filterSelected': s.filter,
       'folders': [],
       'feeds': [],
@@ -298,17 +299,25 @@ var vm = new Vue({
 
       return this.itemSelectedDetails.content || ''
     },
-    contentImages: function() {
-      if (!this.itemSelectedDetails) return []
-      return (this.itemSelectedDetails.media_links || []).filter(l => l.type === 'image')
+    // https://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it#answer-7394787
+    // neat trick...
+    itemSelectedHtmlDecodedContent: function () {
+      if (!this.itemSelected) return ''
+
+      this.htmlEntitiesDecoder.innerHTML = this.itemSelectedDetails.content || ''
+      return this.htmlEntitiesDecoder.textContent
     },
-    contentAudios: function() {
+    contentImages: function () {
       if (!this.itemSelectedDetails) return []
-      return (this.itemSelectedDetails.media_links || []).filter(l => l.type === 'audio')
+      return (this.itemSelectedDetails.media_links || []).filter(l => l.type === 'image' && !this.itemSelectedHtmlDecodedContent.includes(l.url))
     },
-    contentVideos: function() {
+    contentAudios: function () {
       if (!this.itemSelectedDetails) return []
-      return (this.itemSelectedDetails.media_links || []).filter(l => l.type === 'video')
+      return (this.itemSelectedDetails.media_links || []).filter(l => l.type === 'audio' && !this.itemSelectedHtmlDecodedContent.includes(l.url))
+    },
+    contentVideos: function () {
+      if (!this.itemSelectedDetails) return []
+      return (this.itemSelectedDetails.media_links || []).filter(l => l.type === 'video' && !this.itemSelectedHtmlDecodedContent.includes(l.url))
     }
   },
   watch: {
@@ -390,6 +399,9 @@ var vm = new Vue({
     },
   },
   methods: {
+    feedItemImage: function(item = {}) {
+      return (item.media_links ?? []).filter(({type}) => type === "image").at(0)?.url
+    },
     refreshStats: function(loopMode) {
       return api.status().then(function(data) {
         if (loopMode && !vm.itemSelected) vm.refreshItems()
